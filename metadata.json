@@ -1,0 +1,6 @@
+{
+  "name": "LAVRS APP",
+  "description": "Aplikace pro hledání a hodnocení secondhandů v České republice.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
