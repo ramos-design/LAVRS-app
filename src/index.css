@@ -17,6 +17,9 @@
   .animate-marquee {
     animation: marquee 25s linear infinite;
   }
+  .animate-marquee-slow {
+    animation: marquee 50s linear infinite;
+  }
 }
 
 @keyframes marquee {

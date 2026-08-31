@@ -1,11 +1,29 @@
 import { useState } from 'react';
 import { Search, MapPin, Filter, Star, Bell, User, Plus } from 'lucide-react';
+import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import L from 'leaflet';
 import { MOCK_SHOPS, CATEGORIES, CITIES } from '../data';
 import { ViewState } from '../types';
 
 interface MapViewProps {
   onNavigate: (view: ViewState, shopId?: string) => void;
 }
+
+const createCustomIcon = (name: string) => {
+  return L.divIcon({
+    className: 'custom-leaflet-icon',
+    html: `
+      <div class="flex flex-col items-center justify-center -ml-[50%] -mt-[100%] w-max">
+        <div class="bg-red-600 text-white px-3 py-1.5 rounded-lg text-xs font-bold shadow-lg shadow-red-600/30 mb-1 z-10 hover:scale-110 transition-transform cursor-pointer">
+          ${name}
+        </div>
+        <div class="w-3 h-3 bg-red-600 transform rotate-45 -mt-2.5 shadow-sm"></div>
+      </div>
+    `,
+    iconSize: [0, 0],
+    iconAnchor: [0, 0],
+  });
+};
 
 export function MapView({ onNavigate }: MapViewProps) {
   const [activeCategory, setActiveCategory] = useState('Vše');
@@ -64,54 +82,69 @@ export function MapView({ onNavigate }: MapViewProps) {
         </div>
         
         {/* Categories */}
-        <div className="flex overflow-x-auto gap-2 pb-4 pt-2 snap-x hide-scrollbar before:content-[''] before:w-4 before:shrink-0 after:content-[''] after:w-4 after:shrink-0">
-          {CATEGORIES.map(cat => (
+        <div className="w-full flex relative pt-2 pb-4 pl-6 items-center">
+          <div className="relative z-20 bg-[#fcfcfc] pr-2">
             <button
-              key={cat}
-              onClick={() => setActiveCategory(cat)}
-              className={`snap-start whitespace-nowrap px-4 py-2 rounded-full text-xs font-bold tracking-wide transition-colors ${
-                activeCategory === cat 
+              onClick={() => setActiveCategory('Vše')}
+              className={`shrink-0 whitespace-nowrap px-4 py-2 rounded-full text-xs font-bold tracking-wide transition-colors ${
+                activeCategory === 'Vše' 
                   ? 'bg-red-600 text-white shadow-sm shadow-red-600/20' 
                   : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'
               }`}
             >
-              {cat}
+              Vše
             </button>
-          ))}
+          </div>
+          
+          <div className="flex-1 overflow-hidden relative h-full py-1">
+            <div className="absolute left-0 top-0 bottom-0 w-6 bg-gradient-to-r from-[#fcfcfc] to-transparent z-10 pointer-events-none"></div>
+            <div className="absolute right-0 top-0 bottom-0 w-6 bg-gradient-to-l from-[#fcfcfc] to-transparent z-10 pointer-events-none"></div>
+            
+            <div className="flex w-max animate-marquee-slow gap-2 pr-6 hover:[animation-play-state:paused]">
+              {(() => {
+                const scrollCats = CATEGORIES.filter(cat => cat !== 'Vše');
+                return [...scrollCats, ...scrollCats, ...scrollCats, ...scrollCats].map((cat, i) => (
+                  <button
+                    key={i}
+                    onClick={() => setActiveCategory(cat)}
+                    className={`shrink-0 whitespace-nowrap px-4 py-2 rounded-full text-xs font-bold tracking-wide transition-colors ${
+                      activeCategory === cat 
+                        ? 'bg-red-600 text-white shadow-sm shadow-red-600/20' 
+                        : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'
+                    }`}
+                  >
+                    {cat}
+                  </button>
+                ));
+              })()}
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* Map Area (Mock) */}
-      <div className="flex-1 relative bg-[#e5e3df] w-full overflow-hidden">
-        {/* Mock Map Background */}
-        <div className="absolute inset-0 opacity-20 pointer-events-none" style={{
-          backgroundImage: 'radial-gradient(#000 1px, transparent 0)',
-          backgroundSize: '24px 24px'
-        }}></div>
-        
-        {/* Map Markers */}
-        <div className="absolute inset-0 z-10 p-8">
-          {filteredShops.map((shop, i) => (
-            <div 
+      {/* Map Area */}
+      <div className="flex-1 relative bg-[#e5e3df] w-full z-0">
+        <MapContainer 
+          center={[49.8, 15.4]} 
+          zoom={7} 
+          zoomControl={false}
+          className="absolute inset-0 w-full h-full z-0"
+        >
+          <TileLayer
+            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
+          />
+          {filteredShops.map((shop) => (
+            <Marker 
               key={shop.id} 
-              className={`absolute transform -translate-x-1/2 -translate-y-1/2 animate-in fade-in zoom-in duration-300 delay-${i * 100}`}
-              style={{
-                top: `${40 + (i * 15)}%`, 
-                left: `${30 + (i * 25)}%`
+              position={[shop.lat, shop.lng]}
+              icon={createCustomIcon(shop.name)}
+              eventHandlers={{
+                click: () => onNavigate('shop_detail', shop.id),
               }}
-            >
-              <button 
-                onClick={() => onNavigate('shop_detail', shop.id)}
-                className="group relative flex flex-col items-center"
-              >
-                <div className="bg-red-600 text-white px-3 py-1.5 rounded-lg text-xs font-bold shadow-lg shadow-red-600/30 mb-1 z-10 group-hover:scale-110 transition-transform">
-                  {shop.name}
-                </div>
-                <div className="w-4 h-4 bg-red-600 transform rotate-45 -mt-3 shadow-lg shadow-red-600/30"></div>
-              </button>
-            </div>
+            />
           ))}
-        </div>
+        </MapContainer>
 
         {/* Bottom Sheet List */}
         <div className="absolute bottom-24 left-0 right-0 z-20 px-4 pointer-events-none">
@@ -120,7 +153,7 @@ export function MapView({ onNavigate }: MapViewProps) {
               <div 
                 key={`card-${shop.id}`}
                 onClick={() => onNavigate('shop_detail', shop.id)}
-                className="snap-center shrink-0 w-[280px] bg-white p-3 rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] flex gap-3 cursor-pointer"
+                className="snap-center shrink-0 w-[280px] bg-white p-3 rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] flex gap-3 cursor-pointer active:scale-[0.98] transition-transform"
               >
                 <div className="w-20 h-20 rounded-xl overflow-hidden bg-gray-100 shrink-0">
                   <img src={shop.imageUrl} alt={shop.name} className="w-full h-full object-cover" />

@@ -8,13 +8,18 @@ interface EventsViewProps {
   onEventClick: (eventId: string) => void;
 }
 
+const EVENT_CATEGORIES = ['Vše', 'Swap', 'Blešák', 'Workshop', 'Kilo Sale', 'Market'];
+
 export function EventsView({ onNavigate, onEventClick }: EventsViewProps) {
   const [searchQuery, setSearchQuery] = useState('');
+  const [activeCategory, setActiveCategory] = useState('Vše');
 
-  const filteredEvents = MOCK_EVENTS.filter(event => 
-    event.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    event.location.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredEvents = MOCK_EVENTS.filter(event => {
+    const matchCat = activeCategory === 'Vše' || (event.tags && event.tags.includes(activeCategory));
+    const matchSearch = event.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                        event.location.toLowerCase().includes(searchQuery.toLowerCase());
+    return matchCat && matchSearch;
+  });
 
   return (
     <div className="flex flex-col h-full bg-[#fcfcfc] overflow-y-auto pb-24 hide-scrollbar relative">
@@ -40,23 +45,65 @@ export function EventsView({ onNavigate, onEventClick }: EventsViewProps) {
         </div>
       </header>
 
-      <div className="px-6 pt-4 pb-2 z-20">
-        <div className="flex gap-2">
-          <div className="relative flex-1">
-            <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none">
-              <Search className="h-5 w-5 text-gray-400" />
+      <div className="bg-[#fcfcfc] z-20">
+        <div className="px-6 pt-1 pb-1">
+          <div className="flex gap-2">
+            <div className="relative flex-1">
+              <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                <Search size={18} className="text-gray-400" />
+              </div>
+              <input 
+                type="text" 
+                placeholder="Hledat události, místa..." 
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full bg-white border border-gray-100 text-gray-900 text-sm rounded-2xl focus:ring-red-500 focus:border-red-500 block pl-11 p-3.5 shadow-sm transition-all outline-none placeholder:text-gray-400"
+              />
             </div>
-            <input
-              type="text"
-              className="block w-full pl-11 pr-4 py-3.5 bg-white border border-gray-100 rounded-2xl text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-red-600/20 focus:border-red-600 transition-all shadow-sm font-medium"
-              placeholder="Hledat události..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
+            <button className="w-12 h-[50px] shrink-0 bg-white border border-gray-100 rounded-2xl flex items-center justify-center text-gray-700 shadow-sm hover:text-red-600 transition-colors">
+              <Filter size={20} />
+            </button>
           </div>
-          <button className="p-3.5 bg-white border border-gray-100 rounded-2xl text-gray-900 hover:bg-gray-50 transition-colors shadow-sm shrink-0">
-            <Filter size={20} />
-          </button>
+        </div>
+        
+        {/* Categories */}
+        <div className="w-full flex relative pt-2 pb-4 pl-6 items-center">
+          <div className="relative z-20 bg-[#fcfcfc] pr-2">
+            <button
+              onClick={() => setActiveCategory('Vše')}
+              className={`shrink-0 whitespace-nowrap px-4 py-2 rounded-full text-xs font-bold tracking-wide transition-colors ${
+                activeCategory === 'Vše' 
+                  ? 'bg-red-600 text-white shadow-sm shadow-red-600/20' 
+                  : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'
+              }`}
+            >
+              Vše
+            </button>
+          </div>
+          
+          <div className="flex-1 overflow-hidden relative h-full py-1">
+            <div className="absolute left-0 top-0 bottom-0 w-6 bg-gradient-to-r from-[#fcfcfc] to-transparent z-10 pointer-events-none"></div>
+            <div className="absolute right-0 top-0 bottom-0 w-6 bg-gradient-to-l from-[#fcfcfc] to-transparent z-10 pointer-events-none"></div>
+            
+            <div className="flex w-max animate-marquee-slow gap-2 pr-6 hover:[animation-play-state:paused]">
+              {(() => {
+                const scrollCats = EVENT_CATEGORIES.filter(cat => cat !== 'Vše');
+                return [...scrollCats, ...scrollCats, ...scrollCats, ...scrollCats].map((cat, i) => (
+                  <button
+                    key={i}
+                    onClick={() => setActiveCategory(cat)}
+                    className={`shrink-0 whitespace-nowrap px-4 py-2 rounded-full text-xs font-bold tracking-wide transition-colors ${
+                      activeCategory === cat 
+                        ? 'bg-red-600 text-white shadow-sm shadow-red-600/20' 
+                        : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'
+                    }`}
+                  >
+                    {cat}
+                  </button>
+                ));
+              })()}
+            </div>
+          </div>
         </div>
       </div>
 
